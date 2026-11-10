@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin</title><link rel="stylesheet" href="/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.big{font-size:2.4rem;font-weight:700}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.row div{flex:0 0 auto}.row input{width:auto}</style></head><body>
+<nav><a href="/">Register</a><a href="/scan.html">Scanner</a><a class="on" href="/admin.html">Admin</a></nav>
+<main>
+<div class="panel" id="login" hidden style="max-width:360px;margin:40px auto"><h1>Admin login</h1>
+ <label for="pw">Password</label><input id="pw" type="password"><p><button id="loginBtn">Log in</button></p><div class="err" id="lerr"></div></div>
+<div id="dash" hidden>
+ <h1>Dashboard <button class="ghost" id="logout" style="float:right;font-size:.9rem">Log out</button></h1>
+ <div class="grid">
+  <div class="panel"><div>Active members</div><div class="big" id="mTotal">–</div></div>
+  <div class="panel"><div>Present right now</div><div class="big" id="mPresent">–</div></div>
+  <div class="panel"><div>Avg. stay (minutes)</div><div class="big" id="mAvg">–</div></div>
+ </div>
+ <div class="panel"><h2>Recent activity</h2><ul id="recent"></ul></div>
+ <div class="grid">
+  <div class="panel"><h2>Arrivals by hour</h2><canvas id="cHours"></canvas></div>
+  <div class="panel"><h2>Sign-ins per day</h2><canvas id="cDaily"></canvas></div>
+  <div class="panel"><h2>Average stay per day (min)</h2><canvas id="cDur"></canvas></div>
+ </div>
+ <div class="panel"><h2>Members</h2>
+  <div class="scroll"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th><th></th></tr></thead><tbody id="mem"></tbody></table></div></div>
+ <div class="panel"><h2>Attendance log</h2>
+  <div class="row"><div><label for="from">From</label><input type="date" id="from"></div>
+   <div><label for="to">To</label><input type="date" id="to"></div>
+   <div><button id="apply">Apply filter</button></div><div><a class="btn ghost" id="exp" href="#">Export CSV</a></div></div>
+  <div class="scroll"><table><thead><tr><th>Date</th><th>Member</th><th>Sign-in</th><th>Sign-out</th><th>Duration</th></tr></thead><tbody id="rows"></tbody></table></div>
+ </div>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);let charts=[];
+const api=async p=>{const r=await fetch('/api/admin/'+p);if(r.status===401)throw 401;return r.json()};
+const dur=m=>m==null?'Still present':(m>=60?Math.floor(m/60)+'h ':'')+(m%60)+'m';
+function td(tr,t){const c=document.createElement('td');c.textContent=t;tr.appendChild(c)}
+function chart(id,type,labels,data,label){const c=new Chart($(id),{type,data:{labels,datasets:[{label,data,backgroundColor:'#0B6E69',borderColor:'#0B6E69'}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});charts.push(c)}
+async function logs(){
+  const q=new URLSearchParams({from:$('from').value,to:$('to').value}).toString();
+  $('exp').href='/api/admin/export.csv?'+q;
+  const rows=await api('logs?'+q);$('rows').innerHTML='';
+  for(const s of rows){const tr=document.createElement('tr'),i=new Date(s.in);
+    td(tr,i.toLocaleDateString());td(tr,s.name);td(tr,i.toLocaleTimeString());td(tr,s.out?new Date(s.out).toLocaleTimeString():'');td(tr,dur(s.minutes));$('rows').appendChild(tr)}
+  if(!rows.length){const tr=document.createElement('tr');td(tr,'No records for this range.');$('rows').appendChild(tr)}
+}
+async function members(){
+  const list=await api('members');$('mem').innerHTML='';
+  for(const m of list){const tr=document.createElement('tr');
+    td(tr,String(m.id));td(tr,m.name);td(tr,m.email);td(tr,m.active?'Active':'Deactivated');
+    const c=document.createElement('td'),b=document.createElement('button');b.className='ghost';b.textContent=m.active?'Deactivate':'Reactivate';
+    b.onclick=async()=>{if(m.active&&!confirm('Deactivate '+m.name+'? Their card will stop working. Attendance history is kept.'))return;
+      await fetch('/api/admin/members/'+m.id+'/active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!m.active})});load()};
+    c.appendChild(b);tr.appendChild(c);$('mem').appendChild(tr)}
+}
+async function load(){
+  try{
+    const m=await api('metrics');$('login').hidden=true;$('dash').hidden=false;
+    $('mTotal').textContent=m.total;$('mPresent').textContent=m.present;
+    $('recent').innerHTML='';for(const r of m.recent){const li=document.createElement('li');li.textContent=`${r.name} signed ${r.type==='IN'?'in':'out'} at ${new Date(r.time).toLocaleString()}`;$('recent').appendChild(li)}
+    const t=await api('trends');$('mAvg').textContent=t.avgMinutes;
+    charts.forEach(c=>c.destroy());charts=[];
+    chart('cHours','bar',t.hours.map((_,h)=>h+':00'),t.hours,'Sign-ins');
+    chart('cDaily','line',t.daily.map(d=>d.date),t.daily.map(d=>d.count),'Sign-ins');
+    chart('cDur','line',t.avgByDay.map(d=>d.date),t.avgByDay.map(d=>d.minutes),'Minutes');
+    await logs();await members();
+  }catch(e){if(e===401){$('login').hidden=false;$('dash').hidden=true}}
+}
+$('loginBtn').onclick=async()=>{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('pw').value})});
+  if(r.ok)load();else $('lerr').textContent=(await r.json()).error};
+$('logout').onclick=async()=>{await fetch('/api/admin/logout',{method:'POST'});load()};
+$('apply').onclick=logs;load();setInterval(()=>{if(!$('dash').hidden)load()},30000);
+</script></body></html>

@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scanner</title><link rel="stylesheet" href="/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+.tabs{display:flex;gap:8px;margin-bottom:16px}.tabs button{flex:1;background:var(--surface);color:var(--ink);border:2px solid var(--line);padding:16px;font-size:1.2rem}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+#reader{max-width:480px;margin:0 auto}
+#msg{margin:16px auto;max-width:480px;padding:20px;border-radius:10px;font-size:1.3rem;font-weight:700;text-align:center;color:#fff;display:none}
+#msg.ok{background:var(--ok);display:block}#msg.bad{background:var(--bad);display:block}
+</style></head><body>
+<nav><a href="/">Register</a><a class="on" href="/scan.html">Scanner</a><a href="/admin.html">Admin</a></nav>
+<main><h1>Attendance scanner</h1>
+<div class="tabs" role="tablist"><button id="tIN" class="on" role="tab">SIGN IN</button><button id="tOUT" role="tab">SIGN OUT</button></div>
+<div id="reader"></div>
+<div class="panel" style="max-width:480px;margin:16px auto"><strong>No card? Enter the ID number</strong>
+ <div style="display:flex;gap:8px;margin-top:8px"><input id="manual" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 12" aria-label="Member ID number"><button id="manualBtn" style="white-space:nowrap">Record</button></div></div><div id="msg" role="alert"></div></main>
+<script>
+let mode='IN',locked=false;
+const $=id=>document.getElementById(id);
+function setMode(m){mode=m;$('tIN').classList.toggle('on',m==='IN');$('tOUT').classList.toggle('on',m==='OUT')}
+$('tIN').onclick=()=>setMode('IN');$('tOUT').onclick=()=>setMode('OUT');
+function beep(ok){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.frequency.value=ok?880:220;o.connect(c.destination);o.start();o.stop(c.currentTime+(ok?.15:.5))}catch(e){}}
+async function onScan(text){
+  if(locked)return;locked=true;
+  const m=$('msg');
+  try{
+    const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({memberId:text,mode})});
+    const d=await r.json();
+    if(d.ok){const t=new Date(d.time).toLocaleTimeString();
+      m.textContent=d.mode==='IN'?`Welcome, ${d.name}! Signed In at ${t}`:`Goodbye, ${d.name}! Signed Out at ${t}`;m.className='ok'}
+    else{m.textContent=d.error;m.className='bad'}
+    beep(d.ok);
+  }catch(e){m.textContent='Network error. Try again.';m.className='bad';beep(false)}
+  setTimeout(()=>{locked=false;m.className=''},4000); // 4 s debounce
+}
+function manual(){const v=$('manual').value.trim();if(!v)return;onScan(v);$('manual').value=''}
+$('manualBtn').onclick=manual;$('manual').onkeydown=e=>{if(e.key==='Enter')manual()};
+new Html5Qrcode('reader').start({facingMode:'environment'},{fps:10,qrbox:250},onScan,()=>{})
+ .catch(e=>{$('msg').textContent='Camera unavailable. Allow camera access and use HTTPS or localhost.';$('msg').className='bad'});
+</script></body></html>

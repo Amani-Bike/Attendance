@@ -1,0 +1,31 @@
+:root{--bg:#EDF1F3;--surface:#fff;--ink:#16222B;--muted:#5C6B75;--line:#D3DBE0;--accent:#0B6E69;--ok:#0F7A3D;--bad:#B3261E;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#10181D;--surface:#18232A;--ink:#E8EEF1;--muted:#93A3AD;--line:#2B3A43;--accent:#3FB8AF;--ok:#4CC27F;--bad:#FF7A70;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif}
+nav{display:flex;gap:20px;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+nav a{color:var(--muted);text-decoration:none;font-weight:600}nav a.on{color:var(--accent)}
+main{max-width:1000px;margin:0 auto;padding:24px 16px}
+h1{font-size:1.6rem;margin:0 0 16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+button,.btn{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.err{color:var(--bad);margin-top:8px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+.scroll{overflow-x:auto}
+/* ID card: CR80, colours taken from the logo */
+#card{width:3.375in;height:2.125in;border-radius:.12in;background:#fff;color:#2A1030;border:1px solid #d9c9d6;overflow:hidden;display:grid;grid-template-columns:1fr 1.15in;position:relative;font-family:inherit}
+#card .wm{position:absolute;left:50%;top:.52in;width:1.55in;height:1.55in;transform:translateX(-50%);object-fit:contain;opacity:.13;z-index:0}
+#card .band{position:absolute;inset:0 0 auto 0;height:.5in;background:linear-gradient(90deg,#8E1B9E 0%,#F0089A 45%,#FF7A18 80%,#FFD400 100%);z-index:1}
+#card .foot{position:absolute;inset:auto 0 0 0;height:.07in;background:linear-gradient(90deg,#8E1B9E,#F0089A,#FF7A18,#FFD400);z-index:1}
+#card .head{position:absolute;top:.06in;left:.12in;display:flex;align-items:center;gap:.09in;color:#fff;font-weight:700;font-size:10pt;line-height:1.1;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+#card .head img{width:.38in;height:.38in;border-radius:.08in;background:#fff;object-fit:contain;padding:.02in}
+#card .info{position:relative;z-index:2;padding:.6in .1in .16in .14in;display:flex;flex-direction:column;justify-content:flex-end}
+#card .nm{font-size:13pt;font-weight:700;line-height:1.1;overflow-wrap:anywhere}
+#card .idn{font-size:9pt;font-weight:700;color:#C4067F;margin-top:.05in;letter-spacing:.03em}
+#card .qr{position:relative;z-index:2;align-self:end;margin:0 .1in .16in 0;padding:.04in;background:#fff;border:1px solid #e6d3e0;border-radius:.05in}
+#card .qr img{width:100%;display:block}
+@page{size:3.375in 2.125in;margin:0}
+@media print{body *{visibility:hidden}#card,#card *{visibility:visible}#card{position:fixed;left:0;top:0;border:0;border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
