@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "QR Attendance",
+  "short_name": "Attendance",
+  "description": "Register members and record attendance with QR codes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#EDF1F3",
+  "theme_color": "#0B6E69",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

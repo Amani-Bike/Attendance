@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: qr-attendance
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    disk:
+      name: attendance-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATA_DIR
+        value: /var/data
+      - key: ORG_NAME
+        value: Youth Advisory Panel
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true

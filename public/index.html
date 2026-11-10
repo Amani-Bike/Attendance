@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Register member</title><link rel="stylesheet" href="/style.css"></head><body>
+<title>Register member</title><meta name="theme-color" content="#0B6E69"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/style.css"></head><body>
 <nav><a class="on" href="/">Register</a><a href="/scan.html">Scanner</a><a href="/admin.html">Admin</a></nav>
 <main>
 <h1>Register a member</h1>
@@ -16,6 +16,7 @@
   <p><button id="print">Print ID card</button> <button class="ghost" id="again">Register another member</button></p>
   <p style="color:var(--muted)">In the print dialog, choose “Save as PDF” to download the card.</p>
 </div></main>
+<script src="/app.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 $('go').onclick=async()=>{
