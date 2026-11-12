@@ -32,16 +32,23 @@ service worker only caches the app shell, while registration, scanning, and admi
 data require a network connection. On mobile, open the deployed site and choose
 "Add to Home Screen" (or the browser's install option).
 
-### Deploy to Render
+### Deploy to Cloudflare Workers
 
-1. Push this branch to GitHub.
-2. In Render, choose **New → Blueprint** and select this repository.
-3. Before deploying, enter `ADMIN_PASSWORD`, `GOOGLE_SHEETS_ID`,
-   `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_PRIVATE_KEY` when prompted. The
-   Blueprint generates `SESSION_SECRET`.
-4. Open the deployed HTTPS URL on your phone and choose **Add to Home Screen**.
+The Cloudflare Worker serves the pages directly over HTTPS, so the scanner runs
+as a top-level web page rather than inside the Apps Script HTML sandbox.
 
-The Blueprint uses Render's free web-service plan and needs no persistent disk
-because Sheets stores the records. Free hosting has availability and usage
-limits; check whether Render allows signup and deploy without requesting a
-payment method before relying on it.
+1. Push this branch to GitHub and open Cloudflare **Workers & Pages**.
+2. Choose **Create application → GitHub**, connect this repository, and select
+   the `agents/git-push-to-attendance-repo` branch. Cloudflare reads
+   `wrangler.jsonc`; keep the Worker name `qr-attendance`.
+3. Deploy the Worker, then open its **Settings → Variables and Secrets** and
+   add these as secrets (not plain-text variables): `GOOGLE_SHEETS_ID`,
+   `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `ADMIN_PASSWORD`, and
+   `SESSION_SECRET`.
+4. Redeploy after adding the secrets. Open the HTTPS `workers.dev` URL on your
+   phone, test camera scanning, then choose **Add to Home Screen**.
+
+Cloudflare documents a free Workers plan with a daily request limit. Signup
+requirements can vary; if the dashboard asks for payment details, stop rather
+than entering them. The Worker uses the existing restricted spreadsheet and
+service account; never put the private key in the repository or browser code.

@@ -6,11 +6,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev:worker": "wrangler dev"
   },
   "dependencies": {
     "express": "^4.19.2",
     "googleapis": "^189.0.0",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "wrangler": "^4.160.1"
   }
 }
