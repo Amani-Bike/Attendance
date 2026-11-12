@@ -30,6 +30,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
+  if (url.searchParams.has('livePreview')) return;
   if (request.method !== 'GET' || url.origin !== self.location.origin ||
       url.pathname.startsWith('/api/') || url.pathname.startsWith('/qr/')) return;
 

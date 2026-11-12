@@ -1,5 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin</title><meta name="theme-color" content="#0B6E69"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/style.css">
+<script>if(new URLSearchParams(location.search).has('livePreview')&&'serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.length&&Promise.all(r.map(x=>x.unregister())).then(()=>location.reload())).catch(console.error)</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.big{font-size:2.4rem;font-weight:700}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.row div{flex:0 0 auto}.row input{width:auto}</style></head><body>
@@ -9,6 +10,7 @@
  <label for="pw">Password</label><input id="pw" type="password"><p><button id="loginBtn">Log in</button></p><div class="err" id="lerr"></div></div>
 <div id="dash" hidden>
  <h1>Dashboard <button class="ghost" id="logout" style="float:right;font-size:.9rem">Log out</button></h1>
+ <div class="err" id="loadError" role="alert" hidden></div>
  <div class="grid">
   <div class="panel"><div>Active members</div><div class="big" id="mTotal">–</div></div>
   <div class="panel"><div>Present right now</div><div class="big" id="mPresent">–</div></div>
@@ -21,7 +23,7 @@
   <div class="panel"><h2>Average stay per day (min)</h2><canvas id="cDur"></canvas></div>
  </div>
  <div class="panel"><h2>Members</h2>
-  <div class="scroll"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th><th></th></tr></thead><tbody id="mem"></tbody></table></div></div>
+  <div class="scroll"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Gender</th><th>Address</th><th>Phone</th><th>Status</th><th></th></tr></thead><tbody id="mem"></tbody></table></div></div>
  <div class="panel"><h2>Attendance log</h2>
   <div class="row"><div><label for="from">From</label><input type="date" id="from"></div>
    <div><label for="to">To</label><input type="date" id="to"></div>
@@ -32,7 +34,7 @@
 <script src="/app.js"></script>
 <script>
 const $=id=>document.getElementById(id);let charts=[];
-const api=async p=>{const r=await fetch('/api/admin/'+p);if(r.status===401)throw 401;return r.json()};
+const api=async p=>{const r=await fetch('/api/admin/'+p);if(r.status===401)throw 401;const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed.');return d};
 const dur=m=>m==null?'Still present':(m>=60?Math.floor(m/60)+'h ':'')+(m%60)+'m';
 function td(tr,t){const c=document.createElement('td');c.textContent=t;tr.appendChild(c)}
 function chart(id,type,labels,data,label){const c=new Chart($(id),{type,data:{labels,datasets:[{label,data,backgroundColor:'#0B6E69',borderColor:'#0B6E69'}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});charts.push(c)}
@@ -47,7 +49,7 @@ async function logs(){
 async function members(){
   const list=await api('members');$('mem').innerHTML='';
   for(const m of list){const tr=document.createElement('tr');
-    td(tr,String(m.id));td(tr,m.name);td(tr,m.email);td(tr,m.active?'Active':'Deactivated');
+    td(tr,String(m.id));td(tr,m.name);td(tr,m.email);td(tr,m.gender||'');td(tr,m.address||'');td(tr,m.phone||'');td(tr,m.active?'Active':'Deactivated');
     const c=document.createElement('td'),b=document.createElement('button');b.className='ghost';b.textContent=m.active?'Deactivate':'Reactivate';
     b.onclick=async()=>{if(m.active&&!confirm('Deactivate '+m.name+'? Their card will stop working. Attendance history is kept.'))return;
       await fetch('/api/admin/members/'+m.id+'/active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!m.active})});load()};
@@ -56,6 +58,7 @@ async function members(){
 async function load(){
   try{
     const m=await api('metrics');$('login').hidden=true;$('dash').hidden=false;
+    $('loadError').hidden=true;
     $('mTotal').textContent=m.total;$('mPresent').textContent=m.present;
     $('recent').innerHTML='';for(const r of m.recent){const li=document.createElement('li');li.textContent=`${r.name} signed ${r.type==='IN'?'in':'out'} at ${new Date(r.time).toLocaleString()}`;$('recent').appendChild(li)}
     const t=await api('trends');$('mAvg').textContent=t.avgMinutes;
@@ -64,7 +67,11 @@ async function load(){
     chart('cDaily','line',t.daily.map(d=>d.date),t.daily.map(d=>d.count),'Sign-ins');
     chart('cDur','line',t.avgByDay.map(d=>d.date),t.avgByDay.map(d=>d.minutes),'Minutes');
     await logs();await members();
-  }catch(e){if(e===401){$('login').hidden=false;$('dash').hidden=true}}
+  }catch(e){
+    if(e===401){$('login').hidden=false;$('dash').hidden=true;return}
+    $('dash').hidden=false;$('loadError').hidden=false;
+    $('loadError').textContent=e instanceof Error?e.message:'Unable to load the admin dashboard.';
+  }
 }
 $('loginBtn').onclick=async()=>{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('pw').value})});
   if(r.ok)load();else $('lerr').textContent=(await r.json()).error};

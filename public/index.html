@@ -1,11 +1,17 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Register member</title><meta name="theme-color" content="#0B6E69"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/style.css"></head><body>
+<title>Register member</title><meta name="theme-color" content="#0B6E69"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/logo.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><link rel="stylesheet" href="/style.css">
+<script>if(new URLSearchParams(location.search).has('livePreview')&&'serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.length&&Promise.all(r.map(x=>x.unregister())).then(()=>location.reload())).catch(console.error)</script></head><body>
 <nav><a class="on" href="/">Register</a><a href="/scan.html">Scanner</a><a href="/admin.html">Admin</a></nav>
 <main>
 <h1>Register a member</h1>
 <div class="panel"><div id="formBox">
   <label for="name">Full name</label><input id="name" autocomplete="name">
   <label for="email">Email address</label><input id="email" type="email" autocomplete="email">
+  <label for="gender">Gender (optional)</label><select id="gender" autocomplete="sex">
+    <option value="">Select gender</option><option value="Female">Female</option><option value="Male">Male</option>
+  </select>
+  <label for="address">Address (optional)</label><input id="address" autocomplete="street-address" maxlength="500">
+  <label for="phone">Phone number (optional)</label><input id="phone" type="tel" autocomplete="tel" maxlength="50">
   <p><button id="go">Register and create ID card</button></p><div class="err" id="err" role="alert"></div>
 </div></div>
 <div class="panel" id="out" hidden>
@@ -21,7 +27,9 @@
 const $=id=>document.getElementById(id);
 $('go').onclick=async()=>{
   $('err').textContent='';
-  const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('name').value,email:$('email').value})});
+  const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name:$('name').value,email:$('email').value,gender:$('gender').value,address:$('address').value,phone:$('phone').value
+  })});
   const d=await r.json();
   if(!r.ok){$('err').textContent=d.error;return}
   $('org').textContent=d.org.name;$('logo').src=d.org.logo;$('wm').src=d.org.logo;
@@ -29,5 +37,5 @@ $('go').onclick=async()=>{
   $('out').hidden=false;$('formBox').parentElement.hidden=true;
 };
 $('print').onclick=()=>window.print();
-$('again').onclick=()=>{$('name').value=$('email').value='';$('out').hidden=true;$('formBox').parentElement.hidden=false};
+$('again').onclick=()=>{$('name').value=$('email').value=$('gender').value=$('address').value=$('phone').value='';$('out').hidden=true;$('formBox').parentElement.hidden=false};
 </script></body></html>
